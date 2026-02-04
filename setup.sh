@@ -47,9 +47,9 @@ setup_sudo_nopasswd() {
 # 2. 移除登录密码（可选）
 # ============================================
 remove_login_password() {
-    read -p "是否移除登录密码？(y/N): " confirm
+    read -p "是否移除登录密码？(y/N): " confirm < /dev/tty
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        read -s -p "请输入当前密码: " current_password
+        read -s -p "请输入当前密码: " current_password < /dev/tty
         echo ""
 
         if dscl . -authonly "$CURRENT_USER" "$current_password" 2>/dev/null; then
@@ -121,8 +121,8 @@ install_tools() {
 setup_git() {
     log_info "配置 Git..."
 
-    read -p "Git 用户名 (回车跳过): " git_name
-    read -p "Git 邮箱 (回车跳过): " git_email
+    read -p "Git 用户名 (回车跳过): " git_name < /dev/tty
+    read -p "Git 邮箱 (回车跳过): " git_email < /dev/tty
 
     [[ -n "$git_name" ]] && git config --global user.name "$git_name"
     [[ -n "$git_email" ]] && git config --global user.email "$git_email"
