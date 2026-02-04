@@ -18,9 +18,14 @@ curl -fsSL https://raw.githubusercontent.com/peng-xiao-shuai/mac-setup/main/setu
 | Homebrew | macOS 包管理器 |
 | 常用工具 | git, node, pnpm, python, gh, jq, ripgrep, fzf, eza, bat, fd |
 | Google Chrome | `brew install --cask google-chrome` |
+| VS Code | `brew install --cask visual-studio-code` |
+| Raycast | `brew install --cask raycast` |
 | Git 配置 | 用户名、邮箱、默认分支 main |
 | Claude Code | `curl -fsSL https://claude.ai/install.sh \| bash` |
 | OpenAI Codex | `npm i -g @openai/codex` |
+| macOS 优化 | 键盘重复速度、显示隐藏文件 |
+| .zshrc | 常用别名、OSC 8 超链接等 |
+| Rime 鼠须管 | 开源输入法 + 雾凇拼音配置 |
 
 ## 单独配置 sudo 免密码
 
