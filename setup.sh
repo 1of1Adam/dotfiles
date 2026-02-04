@@ -175,6 +175,100 @@ install_codex() {
 }
 
 # ============================================
+# 9. 安装 VS Code
+# ============================================
+install_vscode() {
+    if [[ -d "/Applications/Visual Studio Code.app" ]]; then
+        log_info "VS Code 已安装，跳过"
+    else
+        log_info "安装 VS Code..."
+        brew install --cask visual-studio-code
+        log_info "VS Code 安装完成 ✓"
+    fi
+}
+
+# ============================================
+# 10. 安装 Raycast
+# ============================================
+install_raycast() {
+    if [[ -d "/Applications/Raycast.app" ]]; then
+        log_info "Raycast 已安装，跳过"
+    else
+        log_info "安装 Raycast..."
+        brew install --cask raycast
+        log_info "Raycast 安装完成 ✓"
+    fi
+}
+
+# ============================================
+# 11. macOS 系统优化
+# ============================================
+setup_macos_defaults() {
+    log_info "配置 macOS 系统优化..."
+
+    # 加快键盘重复速度
+    defaults write NSGlobalDomain KeyRepeat -int 1
+    defaults write NSGlobalDomain InitialKeyRepeat -int 10
+
+    # 显示隐藏文件
+    defaults write com.apple.finder AppleShowAllFiles YES
+
+    # 禁止在网络卷上生成 .DS_Store
+    defaults write com.apple.desktopservices DSDontWriteNetworkStores true
+
+    log_info "macOS 系统优化完成 ✓ (部分设置需要重启生效)"
+}
+
+# ============================================
+# 12. 配置 .zshrc
+# ============================================
+setup_zshrc() {
+    log_info "配置 .zshrc..."
+
+    # 备份现有 .zshrc
+    if [[ -f ~/.zshrc ]]; then
+        cp ~/.zshrc ~/.zshrc.backup.$(date +%Y%m%d%H%M%S)
+        log_info "已备份现有 .zshrc"
+    fi
+
+    # 下载 .zshrc 模板
+    curl -fsSL https://raw.githubusercontent.com/1of1Adam/mac-setup/main/zshrc -o ~/.zshrc
+
+    log_info ".zshrc 配置完成 ✓"
+}
+
+# ============================================
+# 13. 安装 Rime 鼠须管输入法
+# ============================================
+install_rime() {
+    if [[ -d "/Library/Input Methods/Squirrel.app" ]]; then
+        log_info "Rime 鼠须管已安装"
+    else
+        log_info "安装 Rime 鼠须管..."
+        brew install --cask squirrel
+        log_info "Rime 鼠须管安装完成 ✓"
+    fi
+
+    # 恢复 Rime 配置
+    log_info "恢复 Rime 配置..."
+    mkdir -p ~/Library/Rime
+
+    # 下载配置（排除 build 和 userdb）
+    RIME_URL="https://raw.githubusercontent.com/1of1Adam/mac-setup/main/rime"
+
+    # 使用 git sparse checkout 下载 rime 目录
+    cd /tmp
+    rm -rf mac-setup-rime 2>/dev/null
+    git clone --depth 1 --filter=blob:none --sparse https://github.com/1of1Adam/mac-setup.git mac-setup-rime
+    cd mac-setup-rime
+    git sparse-checkout set rime
+    cp -r rime/* ~/Library/Rime/
+    rm -rf /tmp/mac-setup-rime
+
+    log_info "Rime 配置恢复完成 ✓ (请重新部署: 右键点击输入法图标 → 重新部署)"
+}
+
+# ============================================
 # 主流程
 # ============================================
 main() {
@@ -188,9 +282,16 @@ main() {
     install_homebrew
     install_tools
     install_chrome
+    install_vscode
+    install_raycast
     setup_git
     install_claude_code
     install_codex
+
+    # 系统配置
+    setup_macos_defaults
+    setup_zshrc
+    install_rime
 
     echo ""
     echo "=========================================="
@@ -201,9 +302,18 @@ main() {
     echo "  - sudo 免密码"
     echo "  - Homebrew + 常用工具"
     echo "  - Google Chrome"
+    echo "  - VS Code"
+    echo "  - Raycast"
     echo "  - Git"
     echo "  - Claude Code CLI"
     echo "  - OpenAI Codex CLI"
+    echo "  - macOS 系统优化 (键盘速度等)"
+    echo "  - .zshrc 配置"
+    echo "  - Rime 鼠须管输入法 + 配置"
+    echo ""
+    echo "提示:"
+    echo "  - 部分设置需要重启或重新登录生效"
+    echo "  - Rime 输入法需要手动重新部署"
     echo ""
 }
 
