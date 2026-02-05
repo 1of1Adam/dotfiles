@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # macOS 新电脑一键配置脚本
-# 使用方法: curl -fsSL https://raw.githubusercontent.com/baoyuanpeng/mac-setup/main/setup.sh | bash
+# 使用方法: curl -fsSL https://raw.githubusercontent.com/1of1Adam/mac-setup/main/setup.sh | bash
 #
 
 set -e
