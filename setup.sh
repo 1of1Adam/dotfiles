@@ -44,7 +44,29 @@ setup_sudo_nopasswd() {
 }
 
 # ============================================
-# 2. 移除登录密码（可选）
+# 2. 禁用 Gatekeeper（允许任何来源的 App）
+# ============================================
+disable_gatekeeper() {
+    log_info "禁用 Gatekeeper..."
+
+    # 检查当前状态
+    if spctl --status 2>/dev/null | grep -q "disabled"; then
+        log_info "Gatekeeper 已禁用，跳过"
+    else
+        # 禁用 Gatekeeper
+        sudo spctl --master-disable 2>/dev/null || true
+
+        # 设置允许任何来源（通过 defaults 写入偏好设置）
+        sudo defaults write /Library/Preferences/com.apple.security GKAutoRearm -bool false 2>/dev/null || true
+        sudo defaults write /Library/Preferences/com.apple.security LSQuarantine -bool false 2>/dev/null || true
+
+        log_info "Gatekeeper 已禁用 ✓"
+        log_warn "注意：首次运行仍需在系统设置 → 隐私与安全性中手动确认 '任何来源'"
+    fi
+}
+
+# ============================================
+# 3. 移除登录密码（可选）
 # ============================================
 remove_login_password() {
     read -p "是否移除登录密码？(y/N): " confirm < /dev/tty
@@ -286,6 +308,9 @@ main() {
     # sudo 免密码必须首先配置
     setup_sudo_nopasswd
 
+    # 禁用 Gatekeeper（允许运行任何来源的 App）
+    disable_gatekeeper
+
     # 可选配置
     remove_login_password
 
@@ -311,6 +336,7 @@ main() {
     echo ""
     echo "已配置:"
     echo "  - sudo 免密码"
+    echo "  - Gatekeeper 禁用（允许任何来源 App）"
     echo "  - Homebrew + 常用工具"
     echo "  - Google Chrome"
     echo "  - VS Code"
