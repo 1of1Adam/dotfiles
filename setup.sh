@@ -483,10 +483,10 @@ setup_macos_defaults() {
     # 不自动启动屏保
     defaults -currentHost write com.apple.screensaver idleTime -int 0
 
-    # Dock 自动隐藏
-    defaults write com.apple.dock autohide -bool true
-    defaults write com.apple.dock autohide-delay -float 0
-    defaults write com.apple.dock autohide-time-modifier -float 0.3
+    # 清理 Dock：移除所有固定应用和最近使用，只保留 Finder
+    defaults write com.apple.dock persistent-apps -array
+    defaults write com.apple.dock recent-apps -array
+    defaults write com.apple.dock show-recents -bool false
 
     # 触控板轻点点击
     defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
