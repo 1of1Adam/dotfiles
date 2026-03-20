@@ -214,6 +214,8 @@ install_tools() {
         procs       # 替代 ps
         httpie      # 替代 curl (更友好)
         tldr        # 替代 man (简化版)
+        zsh-autosuggestions      # zsh 自动补全建议
+        zsh-syntax-highlighting  # zsh 语法高亮
     )
 
     for tool in "${TOOLS[@]}"; do
