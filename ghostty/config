@@ -22,9 +22,12 @@ theme = light:cursor-light,dark:cursor-dark
 
 
 # --- Window and Appearance ---
+macos-icon = custom
+macos-custom-icon = ~/.config/ghostty/icon.png
 background-opacity = 0.95
 background-blur-radius = 30
 macos-titlebar-style = transparent
+macos-titlebar-proxy-icon = hidden
 window-padding-x = 10
 window-padding-y = 8
 window-save-state = always
