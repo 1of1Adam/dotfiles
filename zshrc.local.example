@@ -1,0 +1,14 @@
+# Personal machine-specific additions live here.
+# This file is intentionally not sourced from the repo automatically;
+# your main ~/.zshrc will load ~/.zshrc.local if it exists.
+
+# Examples
+# export MY_PRIVATE_BIN="$HOME/devtools/bin"
+# [[ -d "$MY_PRIVATE_BIN" ]] && path=("$MY_PRIVATE_BIN" $path)
+
+# alias work='cd ~/Developer/my-project'
+# alias cdev='codex --yolo -m gpt-5.4'
+
+# Keep secrets here instead of in the shared dotfiles repo.
+# export OPENAI_API_KEY="..."
+# export ANTHROPIC_API_KEY="..."

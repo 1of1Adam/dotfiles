@@ -1,0 +1,46 @@
+# Cursor Dark — extracted from cursor.com official design system
+#
+# --color-theme-bg:              #14120b
+# --color-theme-fg:              #edecec
+# --color-theme-fg-02:           #d7d6d5  (secondary fg)
+# --color-theme-text:            #edecec
+# --color-theme-text-sec:        edecec/60%  (~#8e8d8d)
+# --color-theme-text-tertiary:   edecec/40%  (~#5e5e5e)
+# --color-theme-product-editor:  #1b1913
+# --color-theme-product-chrome:  #14120b
+# --color-theme-card-hex:        #1b1913
+# --color-theme-card-02-hex:     #201e18
+# --color-theme-card-03-hex:     #26241e
+# --color-theme-card-04-hex:     #2b2923
+# --color-theme-accent:          #f54e00
+# --color-theme-product-ansi-red:   #cf2d56
+# --color-theme-product-ansi-green: #1f8a65
+
+background = #14120b
+foreground = #edecec
+
+cursor-color = #edecec
+cursor-text = #14120b
+
+selection-background = #3b3a33
+selection-foreground = #edecec
+
+# Normal (0-7)
+palette = 0=#1b1913
+palette = 1=#cf2d56
+palette = 2=#1f8a65
+palette = 3=#d4a520
+palette = 4=#5b9bd5
+palette = 5=#a6949c
+palette = 6=#4ec9b0
+palette = 7=#edecec
+
+# Bright (8-15)
+palette = 8=#5e5e5e
+palette = 9=#f14c4c
+palette = 10=#23d18b
+palette = 11=#f5f543
+palette = 12=#3b8eea
+palette = 13=#b6a4ac
+palette = 14=#29b8db
+palette = 15=#ffffff
