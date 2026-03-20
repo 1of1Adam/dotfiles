@@ -541,7 +541,30 @@ setup_claude() {
 }
 
 # ============================================
-# 17. 配置 Codex
+# 17. 配置 Typora 墨纸主题
+# ============================================
+setup_typora() {
+    log_info "配置 Typora 墨纸主题..."
+
+    # 安装思源宋体（主题依赖）
+    if brew list --cask font-noto-serif-cjk-sc &>/dev/null; then
+        log_info "Noto Serif CJK SC 已安装"
+    else
+        log_info "安装 Noto Serif CJK SC..."
+        brew install --cask font-noto-serif-cjk-sc
+    fi
+
+    local themes_dir="$HOME/Library/Application Support/abnerworks.Typora/themes"
+    mkdir -p "$themes_dir"
+
+    install_managed_file "$themes_dir/mozhi.css" "$SCRIPT_DIR/typora/mozhi.css" "typora/mozhi.css" "Typora 墨纸 Light"
+    install_managed_file "$themes_dir/mozhi-dark.css" "$SCRIPT_DIR/typora/mozhi-dark.css" "typora/mozhi-dark.css" "Typora 墨纸 Dark"
+
+    log_info "Typora 墨纸主题配置完成 ✓"
+}
+
+# ============================================
+# 18. 配置 Codex
 # ============================================
 setup_codex_agent() {
     log_info "配置 Codex..."
@@ -589,6 +612,7 @@ main() {
     run_step setup_zshrc
     run_step setup_starship
     run_step setup_claude
+    run_step setup_typora
     run_step setup_codex_agent
 
     echo ""
@@ -619,6 +643,7 @@ main() {
     echo "  - .zshrc.local 模板"
     echo "  - Starship 主题"
     echo "  - Claude 配置 (CLAUDE.md, settings.json, hooks, sounds)"
+    echo "  - Typora 墨纸主题 (思源宋体 + mozhi light/dark)"
     echo "  - Codex 配置 (AGENTS.md, config.toml)"
     echo ""
     echo "提示:"
@@ -656,6 +681,7 @@ ALL_STEPS=(
     setup_zshrc
     setup_starship
     setup_claude
+    setup_typora
     setup_codex_agent
 )
 
