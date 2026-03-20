@@ -152,12 +152,14 @@ run_package_script() {
     fi
 }
 
+# DEV_PROJECT: 在 ~/.zshrc.local 中设置，如 DEV_PROJECT=~/Developer/hangzhou
 dev() {
+    local proj="${DEV_PROJECT:?请在 ~/.zshrc.local 中设置 DEV_PROJECT}"
     if tmux has-session -t dev 2>/dev/null; then
         tmux attach -t dev
     else
         tmux new-session -d -s dev
-        tmux send-keys -t dev 'cd ~/Developer/hangzhou && pnpm dev' Enter
+        tmux send-keys -t dev "cd $proj && pnpm dev" Enter
         echo '服务器已启动，tmux attach -t dev 查看日志'
     fi
 }
@@ -165,9 +167,10 @@ dev() {
 alias off="tmux kill-session -t dev 2>/dev/null && echo '已关闭'"
 
 restart() {
+    local proj="${DEV_PROJECT:?请在 ~/.zshrc.local 中设置 DEV_PROJECT}"
     tmux kill-session -t dev 2>/dev/null
     tmux new-session -d -s dev
-    tmux send-keys -t dev 'cd ~/Developer/hangzhou && pnpm dev' Enter
+    tmux send-keys -t dev "cd $proj && pnpm dev" Enter
     echo '已重启'
 }
 

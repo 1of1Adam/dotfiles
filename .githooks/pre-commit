@@ -1,0 +1,33 @@
+#!/bin/bash
+# 防止 API 密钥和敏感信息被提交
+# 安装: git config core.hooksPath .githooks
+
+RED='\033[0;31m'
+NC='\033[0m'
+
+PATTERNS=(
+    'API_KEY\s*[=:]\s*"[A-Za-z0-9_-]{20,}"'
+    'SECRET\s*[=:]\s*"[A-Za-z0-9_-]{20,}"'
+    'TOKEN\s*[=:]\s*"[A-Za-z0-9_-]{20,}"'
+    'PASSWORD\s*[=:]\s*"[^"]{8,}"'
+)
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$STAGED" ] && exit 0
+
+found=0
+for file in $STAGED; do
+    for pattern in "${PATTERNS[@]}"; do
+        if git show ":$file" 2>/dev/null | grep -qEi "$pattern"; then
+            echo -e "${RED}[BLOCKED]${NC} 疑似密钥: $file (匹配: $pattern)"
+            found=1
+        fi
+    done
+done
+
+if [ $found -ne 0 ]; then
+    echo ""
+    echo "提交被阻止：检测到疑似密钥/token。"
+    echo "如确认安全，使用 git commit --no-verify 跳过检查。"
+    exit 1
+fi

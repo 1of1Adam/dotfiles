@@ -23,7 +23,17 @@ else
 fi
 DOTFILES_RAW_BASE="https://raw.githubusercontent.com/1of1Adam/dotfiles/main"
 
-install_managed_file() {
+# 统一文件安装函数
+# 用法: install_file [--skip-if-exists] TARGET LOCAL_SOURCE REMOTE_SOURCE LABEL
+#   --skip-if-exists: 目标已存在时跳过（用于模板文件，不覆盖用户自定义）
+#   默认行为: 目标已存在时备份后覆盖（用于托管配置文件）
+install_file() {
+    local skip_existing=false
+    if [[ "$1" == "--skip-if-exists" ]]; then
+        skip_existing=true
+        shift
+    fi
+
     local target_path="$1"
     local local_source="$2"
     local remote_source="$3"
@@ -32,6 +42,10 @@ install_managed_file() {
     mkdir -p "$(dirname "$target_path")"
 
     if [[ -f "$target_path" ]]; then
+        if $skip_existing; then
+            log_info "$label 已存在，跳过"
+            return
+        fi
         if diff -q "$target_path" "${local_source:-/dev/null}" &>/dev/null; then
             log_info "$label 内容一致，跳过"
             return
@@ -45,28 +59,8 @@ install_managed_file() {
     else
         curl -fsSL "$DOTFILES_RAW_BASE/$remote_source" -o "$target_path"
     fi
-}
 
-install_template_if_missing() {
-    local target_path="$1"
-    local local_source="$2"
-    local remote_source="$3"
-    local label="$4"
-
-    if [[ -f "$target_path" ]]; then
-        log_info "$label 已存在，跳过"
-        return
-    fi
-
-    mkdir -p "$(dirname "$target_path")"
-
-    if [[ -f "$local_source" ]]; then
-        cp "$local_source" "$target_path"
-    else
-        curl -fsSL "$DOTFILES_RAW_BASE/$remote_source" -o "$target_path"
-    fi
-
-    log_info "$label 已创建 ✓"
+    log_info "$label 已安装 ✓"
 }
 
 install_managed_directory() {
@@ -107,10 +101,19 @@ install_managed_directory() {
     rm -rf "$tmp_dir"
 }
 
+# macOS 版本检查（最低 Ventura 13.0）
+MACOS_VERSION="$(sw_vers -productVersion 2>/dev/null || echo "0")"
+MACOS_MAJOR="${MACOS_VERSION%%.*}"
+if [[ "$MACOS_MAJOR" -lt 13 ]]; then
+    log_error "需要 macOS 13 (Ventura) 或更高版本，当前: $MACOS_VERSION"
+    exit 1
+fi
+
 echo ""
 echo "=========================================="
 echo "   macOS 新电脑一键配置脚本"
 echo "   用户: $CURRENT_USER"
+echo "   系统: macOS $MACOS_VERSION"
 echo "=========================================="
 echo ""
 
@@ -349,6 +352,12 @@ setup_git() {
     git config --global init.defaultBranch main
     git config --global pull.rebase false
 
+    # dotfiles 仓库启用密钥检测 hook
+    if [[ -d "$SCRIPT_DIR/.githooks" ]]; then
+        git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+        log_info "dotfiles pre-commit hook 已激活"
+    fi
+
     if command -v code &> /dev/null; then
         git config --global core.editor "code --wait"
         log_info "Git 编辑器已设置为 VS Code"
@@ -514,8 +523,8 @@ setup_macos_defaults() {
 # ============================================
 setup_zshrc() {
     log_info "配置 .zshrc..."
-    install_managed_file "$HOME/.zshrc" "$SCRIPT_DIR/zshrc" "zshrc" ".zshrc"
-    install_template_if_missing "$HOME/.zshrc.local" "$SCRIPT_DIR/zshrc.local.example" "zshrc.local.example" ".zshrc.local 模板"
+    install_file "$HOME/.zshrc" "$SCRIPT_DIR/zshrc" "zshrc" ".zshrc"
+    install_file --skip-if-exists "$HOME/.zshrc.local" "$SCRIPT_DIR/zshrc.local.example" "zshrc.local.example" ".zshrc.local 模板"
     log_info ".zshrc 配置完成 ✓"
 }
 
@@ -524,7 +533,7 @@ setup_zshrc() {
 # ============================================
 setup_starship() {
     log_info "配置 Starship..."
-    install_managed_file "$HOME/.config/starship.toml" "$SCRIPT_DIR/.config/starship.toml" ".config/starship.toml" "Starship 配置"
+    install_file "$HOME/.config/starship.toml" "$SCRIPT_DIR/.config/starship.toml" ".config/starship.toml" "Starship 配置"
     log_info "Starship 配置完成 ✓"
 }
 
@@ -533,8 +542,8 @@ setup_starship() {
 # ============================================
 setup_claude() {
     log_info "配置 Claude..."
-    install_managed_file "$HOME/.claude/CLAUDE.md" "$SCRIPT_DIR/.claude/CLAUDE.md" ".claude/CLAUDE.md" "Claude CLAUDE.md"
-    install_managed_file "$HOME/.claude/settings.json" "$SCRIPT_DIR/.claude/settings.json" ".claude/settings.json" "Claude settings.json"
+    install_file "$HOME/.claude/CLAUDE.md" "$SCRIPT_DIR/.claude/CLAUDE.md" ".claude/CLAUDE.md" "Claude CLAUDE.md"
+    install_file "$HOME/.claude/settings.json" "$SCRIPT_DIR/.claude/settings.json" ".claude/settings.json" "Claude settings.json"
     install_managed_directory "$HOME/.claude/hooks" "$SCRIPT_DIR/.claude/hooks" ".claude/hooks" "Claude hooks"
     install_managed_directory "$HOME/.claude/sounds" "$SCRIPT_DIR/.claude/sounds" ".claude/sounds" "Claude sounds"
     log_info "Claude 配置完成 ✓"
@@ -557,8 +566,8 @@ setup_typora() {
     local themes_dir="$HOME/Library/Application Support/abnerworks.Typora/themes"
     mkdir -p "$themes_dir"
 
-    install_managed_file "$themes_dir/mozhi.css" "$SCRIPT_DIR/typora/mozhi.css" "typora/mozhi.css" "Typora 墨纸 Light"
-    install_managed_file "$themes_dir/mozhi-dark.css" "$SCRIPT_DIR/typora/mozhi-dark.css" "typora/mozhi-dark.css" "Typora 墨纸 Dark"
+    install_file "$themes_dir/mozhi.css" "$SCRIPT_DIR/typora/mozhi.css" "typora/mozhi.css" "Typora 墨纸 Light"
+    install_file "$themes_dir/mozhi-dark.css" "$SCRIPT_DIR/typora/mozhi-dark.css" "typora/mozhi-dark.css" "Typora 墨纸 Dark"
 
     log_info "Typora 墨纸主题配置完成 ✓"
 }
@@ -568,8 +577,8 @@ setup_typora() {
 # ============================================
 setup_codex_agent() {
     log_info "配置 Codex..."
-    install_managed_file "$HOME/.codex/AGENTS.md" "$SCRIPT_DIR/.codex/AGENTS.md" ".codex/AGENTS.md" "Codex AGENTS.md"
-    install_managed_file "$HOME/.codex/config.toml" "$SCRIPT_DIR/.codex/config.toml" ".codex/config.toml" "Codex config.toml"
+    install_file "$HOME/.codex/AGENTS.md" "$SCRIPT_DIR/.codex/AGENTS.md" ".codex/AGENTS.md" "Codex AGENTS.md"
+    install_file "$HOME/.codex/config.toml" "$SCRIPT_DIR/.codex/config.toml" ".codex/config.toml" "Codex config.toml"
     log_info "Codex 配置完成 ✓"
 }
 

@@ -1,0 +1,2 @@
+shell=bash
+disable=SC2034  # 变量仅在其他脚本中引用
