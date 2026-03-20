@@ -150,7 +150,32 @@ install_tools() {
 }
 
 # ============================================
-# 5. 配置 Git
+# 5. 登录 GitHub CLI
+# ============================================
+ensure_github_login() {
+    if ! command -v gh &> /dev/null; then
+        log_warn "gh 未安装，跳过 GitHub 登录"
+        return
+    fi
+
+    if gh auth status &>/dev/null; then
+        log_info "GitHub CLI 已登录，跳过"
+        return
+    fi
+
+    read -p "是否现在登录 GitHub CLI？(Y/n): " confirm < /dev/tty
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+        log_warn "跳过 GitHub CLI 登录，可稍后手动运行: gh auth login"
+        return
+    fi
+
+    log_info "启动 GitHub CLI 登录..."
+    gh auth login
+    log_info "GitHub CLI 登录完成 ✓"
+}
+
+# ============================================
+# 6. 配置 Git
 # ============================================
 setup_git() {
     log_info "配置 Git..."
@@ -170,7 +195,7 @@ setup_git() {
 }
 
 # ============================================
-# 6. 安装 Google Chrome
+# 7. 安装 Google Chrome
 # ============================================
 install_chrome() {
     if [[ -d "/Applications/Google Chrome.app" ]]; then
@@ -183,7 +208,7 @@ install_chrome() {
 }
 
 # ============================================
-# 7. 安装 Claude Code CLI
+# 8. 安装 Claude Code CLI
 # ============================================
 install_claude_code() {
     if command -v claude &> /dev/null; then
@@ -196,7 +221,7 @@ install_claude_code() {
 }
 
 # ============================================
-# 8. 安装 OpenAI Codex CLI
+# 9. 安装 OpenAI Codex CLI
 # ============================================
 install_codex() {
     if command -v codex &> /dev/null; then
@@ -209,7 +234,7 @@ install_codex() {
 }
 
 # ============================================
-# 9. 安装 VS Code
+# 10. 安装 VS Code
 # ============================================
 install_vscode() {
     if [[ -d "/Applications/Visual Studio Code.app" ]]; then
@@ -222,7 +247,7 @@ install_vscode() {
 }
 
 # ============================================
-# 10. 安装 Raycast
+# 11. 安装 Raycast
 # ============================================
 install_raycast() {
     if [[ -d "/Applications/Raycast.app" ]]; then
@@ -235,7 +260,7 @@ install_raycast() {
 }
 
 # ============================================
-# 11. 安装 Ghostty
+# 12. 安装 Ghostty
 # ============================================
 install_ghostty() {
     if [[ -d "/Applications/Ghostty.app" ]]; then
@@ -248,7 +273,7 @@ install_ghostty() {
 }
 
 # ============================================
-# 12. macOS 系统优化
+# 13. macOS 系统优化
 # ============================================
 setup_macos_defaults() {
     log_info "配置 macOS 系统优化..."
@@ -267,7 +292,7 @@ setup_macos_defaults() {
 }
 
 # ============================================
-# 13. 配置 .zshrc
+# 14. 配置 .zshrc
 # ============================================
 setup_zshrc() {
     log_info "配置 .zshrc..."
@@ -285,7 +310,7 @@ setup_zshrc() {
 }
 
 # ============================================
-# 14. 安装 Rime 鼠须管输入法
+# 15. 安装 Rime 鼠须管输入法
 # ============================================
 install_rime() {
     if [[ -d "/Library/Input Methods/Squirrel.app" ]]; then
@@ -331,6 +356,7 @@ main() {
     # 开发环境
     install_homebrew
     install_tools
+    ensure_github_login
     install_chrome
     install_vscode
     install_raycast

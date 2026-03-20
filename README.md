@@ -5,7 +5,7 @@
 ## 快速使用
 
 ```bash
-# 下载并运行（需要先登录 GitHub）
+# 下载并运行（脚本会在需要时提示登录 GitHub CLI）
 curl -fsSL https://raw.githubusercontent.com/1of1Adam/dotfiles/main/setup.sh | bash
 ```
 
@@ -17,6 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/1of1Adam/dotfiles/main/setup.sh | b
 | 移除登录密码 | 可选，将登录密码设为空 |
 | Homebrew | macOS 包管理器 |
 | 常用工具 | git, node, pnpm, python, gh, jq, ripgrep, fzf, eza, bat, fd |
+| GitHub CLI 登录 | 安装 `gh` 后按提示执行 `gh auth login` |
 | Google Chrome | `brew install --cask google-chrome` |
 | VS Code | `brew install --cask visual-studio-code` |
 | Raycast | `brew install --cask raycast` |
