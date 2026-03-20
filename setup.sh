@@ -15,7 +15,12 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 CURRENT_USER=$(whoami)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${BASH_SOURCE[0]}" && "${BASH_SOURCE[0]}" != "bash" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    # curl | bash 模式：无本地文件，所有配置从远程拉取
+    SCRIPT_DIR=""
+fi
 DOTFILES_RAW_BASE="https://raw.githubusercontent.com/1of1Adam/dotfiles/main"
 
 install_managed_file() {
