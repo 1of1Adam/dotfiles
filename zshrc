@@ -8,7 +8,7 @@ if [[ -f /opt/homebrew/bin/brew ]]; then
 fi
 
 # Python user bin
-for py_user_bin in "$HOME/Library/Python"/*/bin; do
+for py_user_bin in "$HOME"/Library/Python/*/bin(N); do
     [ -d "$py_user_bin" ] || continue
     case ":$PATH:" in
         *":$py_user_bin:"*) ;;
