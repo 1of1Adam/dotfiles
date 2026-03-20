@@ -468,6 +468,29 @@ setup_macos_defaults() {
     # 不自动启动屏保
     defaults -currentHost write com.apple.screensaver idleTime -int 0
 
+    # Dock 自动隐藏
+    defaults write com.apple.dock autohide -bool true
+    defaults write com.apple.dock autohide-delay -float 0
+    defaults write com.apple.dock autohide-time-modifier -float 0.3
+
+    # 触控板轻点点击
+    defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+    defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+    # 三指拖移
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
+
+    # 关闭自然滚动方向
+    defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+
+    # Finder 显示路径栏和状态栏
+    defaults write com.apple.finder ShowPathbar -bool true
+    defaults write com.apple.finder ShowStatusBar -bool true
+
+    # 重启相关服务使设置生效
+    killall Dock Finder 2>/dev/null || true
+
     log_info "macOS 系统优化完成 ✓ (电源策略/部分设置可能需要重新登录生效)"
 }
 
