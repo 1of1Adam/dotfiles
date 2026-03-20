@@ -409,6 +409,7 @@ install_cask_apps() {
         "wechat|/Applications/WeChat.app|WeChat"
         "1password|/Applications/1Password.app|1Password"
         "typeless|/Applications/Typeless.app|Typeless"
+        "input-source-pro|/Applications/Input Source Pro.app|Input Source Pro"
     )
 
     for app_spec in "${app_specs[@]}"; do
