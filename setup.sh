@@ -288,7 +288,46 @@ ensure_github_login() {
 }
 
 # ============================================
-# 7. 配置 Git
+# 7. 生成 SSH Key
+# ============================================
+setup_ssh_key() {
+    local ssh_key="$HOME/.ssh/id_ed25519"
+
+    if [[ -f "$ssh_key" ]]; then
+        log_info "SSH key 已存在，跳过"
+        return
+    fi
+
+    log_info "生成 SSH key (ed25519)..."
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+
+    local email
+    email="$(git config --global user.email 2>/dev/null || true)"
+    if [[ -z "$email" ]]; then
+        read -p "SSH key email: " email < /dev/tty
+    fi
+
+    ssh-keygen -t ed25519 -C "$email" -f "$ssh_key" -N "" < /dev/tty
+    eval "$(ssh-agent -s)" &>/dev/null
+    ssh-add "$ssh_key" 2>/dev/null
+
+    log_info "SSH 公钥:"
+    cat "$ssh_key.pub"
+
+    if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+        read -p "是否将 SSH key 添加到 GitHub？(Y/n): " confirm < /dev/tty
+        if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+            gh ssh-key add "$ssh_key.pub" -t "$(hostname)"
+            log_info "SSH key 已添加到 GitHub ✓"
+        fi
+    else
+        log_warn "请手动将上方公钥添加到 GitHub → Settings → SSH Keys"
+    fi
+}
+
+# ============================================
+# 8. 配置 Git
 # ============================================
 setup_git() {
     log_info "配置 Git 默认项..."
@@ -499,6 +538,7 @@ main() {
     run_step install_tools
     run_step fix_zsh_completion_permissions
     run_step ensure_github_login
+    run_step setup_ssh_key
     run_step install_ghostty_fonts
     run_step install_cask_apps
     run_step setup_ghostty
