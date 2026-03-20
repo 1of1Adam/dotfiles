@@ -145,7 +145,24 @@ disable_gatekeeper() {
 }
 
 # ============================================
-# 3. 安装 Homebrew
+# 3. 安装 Xcode Command Line Tools
+# ============================================
+install_xcode_cli_tools() {
+    if xcode-select -p &>/dev/null; then
+        log_info "Xcode CLI Tools 已安装，跳过"
+    else
+        log_info "安装 Xcode Command Line Tools..."
+        xcode-select --install
+        log_info "等待 Xcode CLI Tools 安装完成（请在弹窗中点击安装）..."
+        until xcode-select -p &>/dev/null; do
+            sleep 5
+        done
+        log_info "Xcode CLI Tools 安装完成 ✓"
+    fi
+}
+
+# ============================================
+# 4. 安装 Homebrew
 # ============================================
 install_homebrew() {
     if command -v brew &> /dev/null; then
@@ -462,6 +479,7 @@ main() {
     disable_gatekeeper
 
     # 开发环境
+    install_xcode_cli_tools
     install_homebrew
     install_tools
     fix_zsh_completion_permissions
