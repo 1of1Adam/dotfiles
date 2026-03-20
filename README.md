@@ -20,6 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/1of1Adam/dotfiles/main/setup.sh | b
 | Google Chrome | `brew install --cask google-chrome` |
 | VS Code | `brew install --cask visual-studio-code` |
 | Raycast | `brew install --cask raycast` |
+| Ghostty | `brew install --cask ghostty` |
 | Git 配置 | 用户名、邮箱、默认分支 main |
 | Claude Code | `curl -fsSL https://claude.ai/install.sh \| bash` |
 | OpenAI Codex | `npm i -g @openai/codex` |

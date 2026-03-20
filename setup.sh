@@ -235,7 +235,20 @@ install_raycast() {
 }
 
 # ============================================
-# 11. macOS 系统优化
+# 11. 安装 Ghostty
+# ============================================
+install_ghostty() {
+    if [[ -d "/Applications/Ghostty.app" ]]; then
+        log_info "Ghostty 已安装，跳过"
+    else
+        log_info "安装 Ghostty..."
+        brew install --cask ghostty
+        log_info "Ghostty 安装完成 ✓"
+    fi
+}
+
+# ============================================
+# 12. macOS 系统优化
 # ============================================
 setup_macos_defaults() {
     log_info "配置 macOS 系统优化..."
@@ -254,7 +267,7 @@ setup_macos_defaults() {
 }
 
 # ============================================
-# 12. 配置 .zshrc
+# 13. 配置 .zshrc
 # ============================================
 setup_zshrc() {
     log_info "配置 .zshrc..."
@@ -272,7 +285,7 @@ setup_zshrc() {
 }
 
 # ============================================
-# 13. 安装 Rime 鼠须管输入法
+# 14. 安装 Rime 鼠须管输入法
 # ============================================
 install_rime() {
     if [[ -d "/Library/Input Methods/Squirrel.app" ]]; then
@@ -321,6 +334,7 @@ main() {
     install_chrome
     install_vscode
     install_raycast
+    install_ghostty
     setup_git
     install_claude_code
     install_codex
@@ -342,6 +356,7 @@ main() {
     echo "  - Google Chrome"
     echo "  - VS Code"
     echo "  - Raycast"
+    echo "  - Ghostty"
     echo "  - Git"
     echo "  - Claude Code CLI"
     echo "  - OpenAI Codex CLI"
