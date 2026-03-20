@@ -596,5 +596,57 @@ main() {
     fi
 }
 
-# 运行
-main "$@"
+# ============================================
+# 所有可用步骤（用于 --only / --list）
+# ============================================
+ALL_STEPS=(
+    setup_sudo_nopasswd
+    disable_gatekeeper
+    install_xcode_cli_tools
+    install_homebrew
+    install_tools
+    fix_zsh_completion_permissions
+    ensure_github_login
+    setup_ssh_key
+    install_ghostty_fonts
+    install_cask_apps
+    setup_ghostty
+    setup_git
+    install_claude_code
+    install_codex
+    setup_macos_defaults
+    setup_zshrc
+    setup_starship
+    setup_claude
+    setup_codex_agent
+)
+
+# ============================================
+# 参数解析
+# ============================================
+if [[ "${1:-}" == "--list" ]]; then
+    echo "可用步骤:"
+    for step in "${ALL_STEPS[@]}"; do
+        echo "  $step"
+    done
+    exit 0
+elif [[ "${1:-}" == "--only" ]]; then
+    shift
+    if [[ $# -eq 0 ]]; then
+        log_error "用法: setup.sh --only <step> [step...]"
+        exit 1
+    fi
+    for step in "$@"; do
+        if declare -f "$step" &>/dev/null; then
+            log_info "运行: $step"
+            "$step"
+        else
+            log_error "未知步骤: $step"
+            exit 1
+        fi
+    done
+    exit 0
+fi
+
+# 运行全部
+main
