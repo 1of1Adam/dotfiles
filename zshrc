@@ -283,15 +283,6 @@ quickserve_tree() {
 }
 alias qst='quickserve_tree'
 
-y() {
-    local tmp cwd
-    tmp="$(mktemp -t 'yazi-cwd.XXXXXX')" || return 1
-    command yazi "$@" --cwd-file="$tmp"
-    cwd="$(<"$tmp")"
-    [[ -n "$cwd" && "$cwd" != "$PWD" && -d "$cwd" ]] && builtin cd -- "$cwd"
-    rm -f -- "$tmp"
-}
-
 # Tool init
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init zsh)"
