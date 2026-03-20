@@ -78,6 +78,13 @@ install_managed_directory() {
 
     mkdir -p "$(dirname "$target_dir")"
 
+    if [[ -d "$target_dir" && -d "$local_source" ]]; then
+        if diff -rq "$target_dir" "$local_source" &>/dev/null; then
+            log_info "$label 内容一致，跳过"
+            return
+        fi
+    fi
+
     if [[ -d "$target_dir" ]]; then
         mv "$target_dir" "$target_dir.backup.$(date +%Y%m%d%H%M%S)"
         log_info "已备份现有 $label"
