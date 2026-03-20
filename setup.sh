@@ -198,6 +198,9 @@ install_homebrew() {
 install_tools() {
     log_info "安装常用开发工具..."
 
+    # 安装阶段跳过 brew 自动更新，加速安装
+    export HOMEBREW_NO_AUTO_UPDATE=1
+
     TOOLS=(
         git
         node
@@ -237,6 +240,7 @@ install_tools() {
         fi
     done
 
+    unset HOMEBREW_NO_AUTO_UPDATE
     log_info "常用工具安装完成 ✓"
 }
 
