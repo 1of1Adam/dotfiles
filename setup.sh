@@ -17,6 +17,85 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 CURRENT_USER=$(whoami)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_RAW_BASE="https://raw.githubusercontent.com/1of1Adam/dotfiles/main"
+
+install_managed_file() {
+    local target_path="$1"
+    local local_source="$2"
+    local remote_source="$3"
+    local label="$4"
+
+    mkdir -p "$(dirname "$target_path")"
+
+    if [[ -f "$target_path" ]]; then
+        if diff -q "$target_path" "${local_source:-/dev/null}" &>/dev/null; then
+            log_info "$label 内容一致，跳过"
+            return
+        fi
+        cp "$target_path" "$target_path.backup.$(date +%Y%m%d%H%M%S)"
+        log_info "已备份现有 $label"
+    fi
+
+    if [[ -f "$local_source" ]]; then
+        cp "$local_source" "$target_path"
+    else
+        curl -fsSL "$DOTFILES_RAW_BASE/$remote_source" -o "$target_path"
+    fi
+}
+
+install_template_if_missing() {
+    local target_path="$1"
+    local local_source="$2"
+    local remote_source="$3"
+    local label="$4"
+
+    if [[ -f "$target_path" ]]; then
+        log_info "$label 已存在，跳过"
+        return
+    fi
+
+    mkdir -p "$(dirname "$target_path")"
+
+    if [[ -f "$local_source" ]]; then
+        cp "$local_source" "$target_path"
+    else
+        curl -fsSL "$DOTFILES_RAW_BASE/$remote_source" -o "$target_path"
+    fi
+
+    log_info "$label 已创建 ✓"
+}
+
+install_managed_directory() {
+    local target_dir="$1"
+    local local_source="$2"
+    local remote_source="$3"
+    local label="$4"
+    local tmp_dir
+
+    mkdir -p "$(dirname "$target_dir")"
+
+    if [[ -d "$target_dir" ]]; then
+        mv "$target_dir" "$target_dir.backup.$(date +%Y%m%d%H%M%S)"
+        log_info "已备份现有 $label"
+    fi
+
+    mkdir -p "$target_dir"
+
+    if [[ -d "$local_source" ]]; then
+        cp -R "$local_source/." "$target_dir/"
+        return
+    fi
+
+    tmp_dir="$(mktemp -d)"
+    git clone --depth 1 --filter=blob:none --sparse https://github.com/1of1Adam/dotfiles.git "$tmp_dir/dotfiles" >/dev/null 2>&1
+    (
+        cd "$tmp_dir/dotfiles" || exit 1
+        git sparse-checkout set "$remote_source" >/dev/null 2>&1
+    )
+    cp -R "$tmp_dir/dotfiles/$remote_source/." "$target_dir/"
+    rm -rf "$tmp_dir"
+}
 
 echo ""
 echo "=========================================="
@@ -66,27 +145,6 @@ disable_gatekeeper() {
 }
 
 # ============================================
-# 3. 移除登录密码（可选）
-# ============================================
-remove_login_password() {
-    read -p "是否移除登录密码？(y/N): " confirm < /dev/tty
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        read -s -p "请输入当前密码: " current_password < /dev/tty
-        echo ""
-
-        if dscl . -authonly "$CURRENT_USER" "$current_password" 2>/dev/null; then
-            dscl . -passwd "/Users/$CURRENT_USER" "$current_password" ""
-            log_info "登录密码已移除 ✓"
-        else
-            log_error "密码验证失败"
-            return 1
-        fi
-    else
-        log_info "跳过移除登录密码"
-    fi
-}
-
-# ============================================
 # 3. 安装 Homebrew
 # ============================================
 install_homebrew() {
@@ -98,7 +156,9 @@ install_homebrew() {
 
         # 添加到 PATH (Apple Silicon)
         if [[ -f /opt/homebrew/bin/brew ]]; then
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+            if ! grep -qF 'brew shellenv' ~/.zprofile 2>/dev/null; then
+                echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+            fi
             eval "$(/opt/homebrew/bin/brew shellenv)"
         fi
         log_info "Homebrew 安装完成 ✓"
@@ -129,7 +189,9 @@ install_tools() {
         starship    # 终端 prompt 美化
         delta       # git diff 美化
         lazygit     # git TUI
+        tmux        # 终端多路复用
         htop        # 替代 top
+        mole        # macOS 清理工具
         dust        # 替代 du
         duf         # 替代 df
         procs       # 替代 ps
@@ -150,7 +212,36 @@ install_tools() {
 }
 
 # ============================================
-# 5. 登录 GitHub CLI
+# 5. 修复 Zsh completion 权限
+# ============================================
+fix_zsh_completion_permissions() {
+    log_info "修复 Zsh completion 权限..."
+
+    local completion_dir
+    for completion_dir in \
+        /opt/homebrew/share/zsh \
+        /opt/homebrew/share/zsh/site-functions \
+        /opt/homebrew/share/zsh-completions
+    do
+        if [[ -d "$completion_dir" ]]; then
+            find "$completion_dir" -type d -exec chmod go-w {} + 2>/dev/null || true
+        fi
+    done
+
+    if command -v zsh &> /dev/null; then
+        local insecure_dirs
+        insecure_dirs="$(zsh -fc 'autoload -Uz compaudit; compaudit' 2>/dev/null || true)"
+        if [[ -n "$insecure_dirs" ]]; then
+            log_warn "仍检测到不安全目录，请手动检查:"
+            printf '%s\n' "$insecure_dirs"
+        else
+            log_info "Zsh completion 权限正常 ✓"
+        fi
+    fi
+}
+
+# ============================================
+# 6. 登录 GitHub CLI
 # ============================================
 ensure_github_login() {
     if ! command -v gh &> /dev/null; then
@@ -175,40 +266,91 @@ ensure_github_login() {
 }
 
 # ============================================
-# 6. 配置 Git
+# 7. 配置 Git
 # ============================================
 setup_git() {
-    log_info "配置 Git..."
+    log_info "配置 Git 默认项..."
 
-    read -p "Git 用户名 (回车跳过): " git_name < /dev/tty
-    read -p "Git 邮箱 (回车跳过): " git_email < /dev/tty
-
-    [[ -n "$git_name" ]] && git config --global user.name "$git_name"
-    [[ -n "$git_email" ]] && git config --global user.email "$git_email"
-
-    # 常用配置
     git config --global init.defaultBranch main
     git config --global pull.rebase false
-    git config --global core.editor "code --wait"
 
-    log_info "Git 配置完成 ✓"
-}
-
-# ============================================
-# 7. 安装 Google Chrome
-# ============================================
-install_chrome() {
-    if [[ -d "/Applications/Google Chrome.app" ]]; then
-        log_info "Google Chrome 已安装，跳过"
+    if command -v code &> /dev/null; then
+        git config --global core.editor "code --wait"
+        log_info "Git 编辑器已设置为 VS Code"
     else
-        log_info "安装 Google Chrome..."
-        brew install --cask google-chrome
-        log_info "Google Chrome 安装完成 ✓"
+        git config --global --unset core.editor 2>/dev/null || true
+        log_info "未检测到 VS Code，跳过 Git 编辑器配置"
     fi
+
+    log_info "Git 默认配置完成 ✓"
 }
 
 # ============================================
-# 8. 安装 Claude Code CLI
+# 8. 安装 Ghostty 字体
+# ============================================
+install_ghostty_fonts() {
+    log_info "安装 Ghostty 字体..."
+
+    if brew list --cask font-geist-mono &>/dev/null; then
+        log_info "Geist Mono 已安装"
+    else
+        log_info "安装 Geist Mono..."
+        brew install --cask font-geist-mono
+    fi
+
+    if ! brew tap | grep -qx 'laishulu/homebrew'; then
+        log_info "添加 Sarasa Nerd 字体源..."
+        brew tap laishulu/homebrew
+    fi
+
+    if brew list --cask font-sarasa-nerd &>/dev/null; then
+        log_info "Sarasa Term SC Nerd 已安装"
+    else
+        log_info "安装 Sarasa Term SC Nerd..."
+        brew install --cask font-sarasa-nerd
+    fi
+
+    if brew list --cask font-jetbrains-mono-nerd-font &>/dev/null; then
+        log_info "JetBrains Mono Nerd Font 已安装"
+    else
+        log_info "安装 JetBrains Mono Nerd Font..."
+        brew install --cask font-jetbrains-mono-nerd-font
+    fi
+
+    log_info "Ghostty 字体安装完成 ✓"
+}
+
+# ============================================
+# 9. 安装 GUI 应用
+# ============================================
+install_cask_apps() {
+    local app_spec token app_path app_name
+    local -a app_specs=(
+        "google-chrome|/Applications/Google Chrome.app|Google Chrome"
+        "raycast|/Applications/Raycast.app|Raycast"
+        "ghostty|/Applications/Ghostty.app|Ghostty"
+        "codex-app|/Applications/Codex.app|Codex App"
+        "zed|/Applications/Zed.app|Zed"
+        "wechat|/Applications/WeChat.app|WeChat"
+        "1password|/Applications/1Password.app|1Password"
+        "typeless|/Applications/Typeless.app|Typeless"
+    )
+
+    for app_spec in "${app_specs[@]}"; do
+        IFS='|' read -r token app_path app_name <<< "$app_spec"
+
+        if [[ -d "$app_path" ]]; then
+            log_info "$app_name 已安装，跳过"
+        else
+            log_info "安装 $app_name..."
+            brew install --cask "$token"
+            log_info "$app_name 安装完成 ✓"
+        fi
+    done
+}
+
+# ============================================
+# 10. 安装 Claude Code CLI
 # ============================================
 install_claude_code() {
     if command -v claude &> /dev/null; then
@@ -221,7 +363,7 @@ install_claude_code() {
 }
 
 # ============================================
-# 9. 安装 OpenAI Codex CLI
+# 11. 安装 OpenAI Codex CLI
 # ============================================
 install_codex() {
     if command -v codex &> /dev/null; then
@@ -234,42 +376,12 @@ install_codex() {
 }
 
 # ============================================
-# 10. 安装 VS Code
+# 12. 配置 Ghostty
 # ============================================
-install_vscode() {
-    if [[ -d "/Applications/Visual Studio Code.app" ]]; then
-        log_info "VS Code 已安装，跳过"
-    else
-        log_info "安装 VS Code..."
-        brew install --cask visual-studio-code
-        log_info "VS Code 安装完成 ✓"
-    fi
-}
-
-# ============================================
-# 11. 安装 Raycast
-# ============================================
-install_raycast() {
-    if [[ -d "/Applications/Raycast.app" ]]; then
-        log_info "Raycast 已安装，跳过"
-    else
-        log_info "安装 Raycast..."
-        brew install --cask raycast
-        log_info "Raycast 安装完成 ✓"
-    fi
-}
-
-# ============================================
-# 12. 安装 Ghostty
-# ============================================
-install_ghostty() {
-    if [[ -d "/Applications/Ghostty.app" ]]; then
-        log_info "Ghostty 已安装，跳过"
-    else
-        log_info "安装 Ghostty..."
-        brew install --cask ghostty
-        log_info "Ghostty 安装完成 ✓"
-    fi
+setup_ghostty() {
+    log_info "配置 Ghostty..."
+    install_managed_directory "$HOME/.config/ghostty" "$SCRIPT_DIR/ghostty" "ghostty" "Ghostty 配置"
+    log_info "Ghostty 配置完成 ✓"
 }
 
 # ============================================
@@ -277,6 +389,10 @@ install_ghostty() {
 # ============================================
 setup_macos_defaults() {
     log_info "配置 macOS 系统优化..."
+
+    # 开发机电源策略：常亮、不自动睡眠、关闭 Power Nap
+    sudo pmset -c sleep 0 displaysleep 0 disksleep 0 powernap 0 tcpkeepalive 1 ttyskeepawake 1 womp 1 lowpowermode 0
+    sudo pmset -b sleep 0 displaysleep 0 disksleep 0 powernap 0 tcpkeepalive 1 ttyskeepawake 1 womp 0 lowpowermode 0 lessbright 0 || true
 
     # 加快键盘重复速度
     defaults write NSGlobalDomain KeyRepeat -int 1
@@ -288,7 +404,10 @@ setup_macos_defaults() {
     # 禁止在网络卷上生成 .DS_Store
     defaults write com.apple.desktopservices DSDontWriteNetworkStores true
 
-    log_info "macOS 系统优化完成 ✓ (部分设置需要重启生效)"
+    # 不自动启动屏保
+    defaults -currentHost write com.apple.screensaver idleTime -int 0
+
+    log_info "macOS 系统优化完成 ✓ (电源策略/部分设置可能需要重新登录生效)"
 }
 
 # ============================================
@@ -296,48 +415,40 @@ setup_macos_defaults() {
 # ============================================
 setup_zshrc() {
     log_info "配置 .zshrc..."
-
-    # 备份现有 .zshrc
-    if [[ -f ~/.zshrc ]]; then
-        cp ~/.zshrc ~/.zshrc.backup.$(date +%Y%m%d%H%M%S)
-        log_info "已备份现有 .zshrc"
-    fi
-
-    # 下载 .zshrc 模板
-    curl -fsSL https://raw.githubusercontent.com/1of1Adam/dotfiles/main/zshrc -o ~/.zshrc
-
+    install_managed_file "$HOME/.zshrc" "$SCRIPT_DIR/zshrc" "zshrc" ".zshrc"
+    install_template_if_missing "$HOME/.zshrc.local" "$SCRIPT_DIR/zshrc.local.example" "zshrc.local.example" ".zshrc.local 模板"
     log_info ".zshrc 配置完成 ✓"
 }
 
 # ============================================
-# 15. 安装 Rime 鼠须管输入法
+# 15. 配置 Starship
 # ============================================
-install_rime() {
-    if [[ -d "/Library/Input Methods/Squirrel.app" ]]; then
-        log_info "Rime 鼠须管已安装"
-    else
-        log_info "安装 Rime 鼠须管..."
-        brew install --cask squirrel
-        log_info "Rime 鼠须管安装完成 ✓"
-    fi
+setup_starship() {
+    log_info "配置 Starship..."
+    install_managed_file "$HOME/.config/starship.toml" "$SCRIPT_DIR/.config/starship.toml" ".config/starship.toml" "Starship 配置"
+    log_info "Starship 配置完成 ✓"
+}
 
-    # 恢复 Rime 配置
-    log_info "恢复 Rime 配置..."
-    mkdir -p ~/Library/Rime
+# ============================================
+# 16. 配置 Claude
+# ============================================
+setup_claude() {
+    log_info "配置 Claude..."
+    install_managed_file "$HOME/.claude/CLAUDE.md" "$SCRIPT_DIR/.claude/CLAUDE.md" ".claude/CLAUDE.md" "Claude CLAUDE.md"
+    install_managed_file "$HOME/.claude/settings.json" "$SCRIPT_DIR/.claude/settings.json" ".claude/settings.json" "Claude settings.json"
+    install_managed_directory "$HOME/.claude/hooks" "$SCRIPT_DIR/.claude/hooks" ".claude/hooks" "Claude hooks"
+    install_managed_directory "$HOME/.claude/sounds" "$SCRIPT_DIR/.claude/sounds" ".claude/sounds" "Claude sounds"
+    log_info "Claude 配置完成 ✓"
+}
 
-    # 下载配置（排除 build 和 userdb）
-    RIME_URL="https://raw.githubusercontent.com/1of1Adam/dotfiles/main/rime"
-
-    # 使用 git sparse checkout 下载 rime 目录
-    cd /tmp
-    rm -rf dotfiles-rime 2>/dev/null
-    git clone --depth 1 --filter=blob:none --sparse https://github.com/1of1Adam/dotfiles.git dotfiles-rime
-    cd dotfiles-rime
-    git sparse-checkout set rime
-    cp -r rime/* ~/Library/Rime/
-    rm -rf /tmp/dotfiles-rime
-
-    log_info "Rime 配置恢复完成 ✓ (请重新部署: 右键点击输入法图标 → 重新部署)"
+# ============================================
+# 17. 配置 Codex
+# ============================================
+setup_codex_agent() {
+    log_info "配置 Codex..."
+    install_managed_file "$HOME/.codex/AGENTS.md" "$SCRIPT_DIR/.codex/AGENTS.md" ".codex/AGENTS.md" "Codex AGENTS.md"
+    install_managed_file "$HOME/.codex/config.toml" "$SCRIPT_DIR/.codex/config.toml" ".codex/config.toml" "Codex config.toml"
+    log_info "Codex 配置完成 ✓"
 }
 
 # ============================================
@@ -350,17 +461,14 @@ main() {
     # 禁用 Gatekeeper（允许运行任何来源的 App）
     disable_gatekeeper
 
-    # 可选配置
-    remove_login_password
-
     # 开发环境
     install_homebrew
     install_tools
+    fix_zsh_completion_permissions
     ensure_github_login
-    install_chrome
-    install_vscode
-    install_raycast
-    install_ghostty
+    install_ghostty_fonts
+    install_cask_apps
+    setup_ghostty
     setup_git
     install_claude_code
     install_codex
@@ -368,7 +476,9 @@ main() {
     # 系统配置
     setup_macos_defaults
     setup_zshrc
-    install_rime
+    setup_starship
+    setup_claude
+    setup_codex_agent
 
     echo ""
     echo "=========================================="
@@ -379,20 +489,29 @@ main() {
     echo "  - sudo 免密码"
     echo "  - Gatekeeper 禁用（允许任何来源 App）"
     echo "  - Homebrew + 常用工具"
+    echo "  - Zsh completion 权限修复"
+    echo "  - 终端字体 (Geist Mono + Sarasa Term SC Nerd + JetBrains Mono Nerd Font)"
     echo "  - Google Chrome"
-    echo "  - VS Code"
     echo "  - Raycast"
     echo "  - Ghostty"
-    echo "  - Git"
+    echo "  - Ghostty 配置与主题"
+    echo "  - Codex App"
+    echo "  - Zed"
+    echo "  - WeChat"
+    echo "  - 1Password"
+    echo "  - Typeless"
+    echo "  - Git 默认配置"
     echo "  - Claude Code CLI"
     echo "  - OpenAI Codex CLI"
-    echo "  - macOS 系统优化 (键盘速度等)"
+    echo "  - macOS 系统优化 (电源策略、键盘速度等)"
     echo "  - .zshrc 配置"
-    echo "  - Rime 鼠须管输入法 + 配置"
+    echo "  - .zshrc.local 模板"
+    echo "  - Starship 主题"
+    echo "  - Claude 配置 (CLAUDE.md, settings.json, hooks, sounds)"
+    echo "  - Codex 配置 (AGENTS.md, config.toml)"
     echo ""
     echo "提示:"
     echo "  - 部分设置需要重启或重新登录生效"
-    echo "  - Rime 输入法需要手动重新部署"
     echo ""
 }
 
