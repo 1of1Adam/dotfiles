@@ -169,6 +169,9 @@ install_xcode_cli_tools() {
         done
         log_info "Xcode CLI Tools 安装完成 ✓"
     fi
+
+    # 自动接受 Xcode 许可协议
+    sudo xcodebuild -license accept 2>/dev/null || true
 }
 
 # ============================================
