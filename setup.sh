@@ -4,8 +4,6 @@
 # 使用方法: curl -fsSL https://raw.githubusercontent.com/1of1Adam/dotfiles/main/setup.sh | bash
 #
 
-set -e
-
 # 颜色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -474,31 +472,41 @@ setup_codex_agent() {
 # 主流程
 # ============================================
 main() {
+    local failed=()
+
+    run_step() {
+        local name="$1"
+        if ! "$name"; then
+            log_error "$name 失败"
+            failed+=("$name")
+        fi
+    }
+
     # sudo 免密码必须首先配置
-    setup_sudo_nopasswd
+    run_step setup_sudo_nopasswd
 
     # 禁用 Gatekeeper（允许运行任何来源的 App）
-    disable_gatekeeper
+    run_step disable_gatekeeper
 
     # 开发环境
-    install_xcode_cli_tools
-    install_homebrew
-    install_tools
-    fix_zsh_completion_permissions
-    ensure_github_login
-    install_ghostty_fonts
-    install_cask_apps
-    setup_ghostty
-    setup_git
-    install_claude_code
-    install_codex
+    run_step install_xcode_cli_tools
+    run_step install_homebrew
+    run_step install_tools
+    run_step fix_zsh_completion_permissions
+    run_step ensure_github_login
+    run_step install_ghostty_fonts
+    run_step install_cask_apps
+    run_step setup_ghostty
+    run_step setup_git
+    run_step install_claude_code
+    run_step install_codex
 
     # 系统配置
-    setup_macos_defaults
-    setup_zshrc
-    setup_starship
-    setup_claude
-    setup_codex_agent
+    run_step setup_macos_defaults
+    run_step setup_zshrc
+    run_step setup_starship
+    run_step setup_claude
+    run_step setup_codex_agent
 
     echo ""
     echo "=========================================="
@@ -533,6 +541,14 @@ main() {
     echo "提示:"
     echo "  - 部分设置需要重启或重新登录生效"
     echo ""
+
+    if [[ ${#failed[@]} -gt 0 ]]; then
+        log_error "以下步骤失败，可单独重试:"
+        for step in "${failed[@]}"; do
+            echo "  - $step"
+        done
+        return 1
+    fi
 }
 
 # 运行
