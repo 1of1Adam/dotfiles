@@ -492,6 +492,9 @@ setup_macos_defaults() {
     # 不自动启动屏保
     defaults -currentHost write com.apple.screensaver idleTime -int 0
 
+    # 隐藏桌面图标（保持桌面干净）
+    defaults write com.apple.finder CreateDesktop -bool false
+
     # 清理 Dock：移除所有固定应用和最近使用，只保留 Finder
     defaults write com.apple.dock persistent-apps -array
     defaults write com.apple.dock recent-apps -array
