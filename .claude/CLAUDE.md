@@ -14,14 +14,19 @@
 - Commit message 须包含: 问题描述 / 复现路径 / 修复思路
 </important>
 
-<important if="you need to debug in a browser, inspect web pages, or take screenshots">
-
-- 先 `zsh -ic 'chrome'` 启动 Chrome，再用 chrome-devtools CLI 操作
-</important>
-
 <important if="you need to search the web for current information">
 
-- 用 `web-search` skill（Brave Search API）
+- 用 `/web-search` skill（inferen.sh：Exa + Tavily）
+</important>
+
+<important if="you need to conduct in-depth research on a topic">
+
+- 用 `/deep-research` skill（199-biotechnologies，8 阶段方法论 + 引用验证）
+</important>
+
+<important if="you need to browse the web, inspect a page, take screenshots, or interact with any website">
+
+- 使用 `/browse` skill（gstack），**禁止**使用 `mcp__claude-in-chrome__*` 工具
 </important>
 
 <important if="you are about to use, import, or configure a third-party library">
@@ -29,11 +34,11 @@
 - 用 `context7` skill（`ctx7` CLI）查询最新文档，禁止依赖过时训练数据
 </important>
 
-## gstack
+<important if="you are building React or Next.js applications">
 
-<important if="you need to browse the web, inspect a page, take screenshots, or interact with any website">
-
-- 使用 `/browse` skill（gstack），**禁止**使用 `mcp__claude-in-chrome__*` 工具
+- 用 `vercel-react-best-practices` skill（Vercel 官方 React/Next.js 最佳实践）
 </important>
+
+## gstack
 
 可用 skills: `/office-hours`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/design-consultation`, `/review`, `/ship`, `/browse`, `/qa`, `/qa-only`, `/design-review`, `/setup-browser-cookies`, `/retro`, `/investigate`, `/document-release`, `/codex`, `/careful`, `/freeze`, `/guard`, `/unfreeze`, `/gstack-upgrade`

@@ -1,0 +1,123 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__pencil",
+      "Bash(source ~/.p10k.zsh)",
+      "Bash(plutil:*)",
+      "Bash(open:*)",
+      "Bash(/usr/bin/swift create_theme.swift:*)",
+      "Bash(echo:*)",
+      "Bash(~/.zshrc)",
+      "Skill(baoyu-slide-deck)",
+      "Skill(baoyu-slide-deck:*)",
+      "Bash(npx:*)",
+      "Bash(firecrawl --status:*)",
+      "Bash(firecrawl scrape:*)",
+      "Bash(claude --version:*)",
+      "Bash(npm update:*)",
+      "Bash(npm install:*)",
+      "Bash(/Users/adampeng/.nvm/versions/node/v25.3.0/bin/claude:*)"
+    ],
+    "defaultMode": "default"
+  },
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pkill -9 -f 'progress_loop' 2>/dev/null; nohup bash -c 'while true; do afplay -v 0.5 ~/.claude/sounds/progress_loop.wav; done' >/dev/null 2>&1 & disown"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pkill -9 -f 'progress_loop' 2>/dev/null; true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pkill -9 -f 'progress_loop' 2>/dev/null; afplay -v 0.5 ~/.claude/sounds/chime.mp3 || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pkill -9 -f 'progress_loop' 2>/dev/null; true"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash -c 'plugin_dir=$(find \"$HOME/.claude/plugins/cache/claude-hud/claude-hud\" -maxdepth 1 -mindepth 1 -type d -name \"[0-9]*\" | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1); exec \"/opt/homebrew/bin/bun\" \"${plugin_dir}/src/index.ts\"'"
+  },
+  "enabledPlugins": {
+    "chrome-devtools-mcp@chrome-devtools-plugins": false,
+    "claude-hud@claude-hud": true,
+    "claude-md-management@claude-plugins-official": true,
+    "cli-anything@cli-anything": true,
+    "code-simplifier@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "impeccable@impeccable": true,
+    "scheduler@claude-scheduler": false,
+    "superpowers@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "telegram@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "chrome-devtools-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    },
+    "claude-hud": {
+      "source": {
+        "source": "github",
+        "repo": "jarrodwatts/claude-hud"
+      }
+    },
+    "cli-anything": {
+      "source": {
+        "source": "github",
+        "repo": "HKUDS/CLI-Anything"
+      }
+    },
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    }
+  },
+  "language": "Chinese",
+  "effortLevel": "high",
+  "voiceEnabled": true,
+  "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true
+}

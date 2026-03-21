@@ -59,7 +59,7 @@ if command -v fd >/dev/null 2>&1; then
     alias fd='fd --hyperlink=always'
 fi
 if command -v claude >/dev/null 2>&1; then
-    alias cc='claude --dangerously-skip-permissions --channels plugin:telegram@claude-plugins-official'
+    alias cc='claude --dangerously-skip-permissions --effort max --channels plugin:telegram@claude-plugins-official'
 fi
 if command -v codex >/dev/null 2>&1; then
     alias c='codex --yolo'
